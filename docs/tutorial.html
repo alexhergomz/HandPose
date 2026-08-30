@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<style>
+  :root{
+    --ink:#1d3557; --teal:#2a9d8f; --orange:#e76f51; --red:#e63946;
+    --gold:#e9c46a; --gray:#5b6472; --light:#eef2f5; --line:#d7dee6;
+  }
+  *{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  @page{ size:A4; margin:17mm 16mm 16mm 16mm; }
+  html,body{ margin:0; padding:0; }
+  body{
+    font-family:"Helvetica Neue",Arial,sans-serif; color:var(--ink);
+    font-size:10.6pt; line-height:1.5;
+  }
+  h1{ font-size:25pt; margin:0 0 2mm 0; color:var(--ink); letter-spacing:-0.4px; }
+  h2{ font-size:14.5pt; margin:0 0 3mm 0; color:var(--ink);
+      padding-bottom:1.6mm; border-bottom:2.5px solid var(--teal); page-break-after:avoid; }
+  h3{ font-size:11.5pt; margin:4mm 0 1.5mm 0; color:var(--ink); page-break-after:avoid; }
+  p{ margin:0 0 2.6mm 0; }
+  .lead{ font-size:11.4pt; color:var(--gray); }
+  .section{ margin-bottom:8mm; }
+  figure{ margin:3mm 0; text-align:center; page-break-inside:avoid; }
+  figure img{ width:100%; max-width:172mm; }
+  figcaption{ font-size:8.6pt; color:var(--gray); margin-top:1mm; }
+  .fig-narrow img{ max-width:150mm; }
+  .callout{ border-radius:3mm; padding:3.2mm 4mm; margin:3mm 0; font-size:10pt;
+            page-break-inside:avoid; }
+  .c-key{ background:#fdf3ee; border-left:4px solid var(--orange); }
+  .c-warn{ background:#fdecee; border-left:4px solid var(--red); }
+  .c-ok{ background:#eaf6f3; border-left:4px solid var(--teal); }
+  .callout .t{ font-weight:700; display:block; margin-bottom:0.6mm; }
+  .grid2{ display:flex; gap:6mm; }
+  .grid2>div{ flex:1; }
+  ul{ margin:1mm 0 2.6mm 0; padding-left:5mm; }
+  li{ margin-bottom:1.2mm; }
+  .check li{ list-style:none; position:relative; padding-left:6mm; margin-bottom:1.6mm; }
+  .check li:before{ content:"✓"; position:absolute; left:0; color:var(--teal);
+                    font-weight:700; }
+  .cross{ color:var(--red); font-weight:700; }
+  .cover{ border-bottom:3px solid var(--ink); padding-bottom:5mm; margin-bottom:7mm; }
+  .tag{ display:inline-block; background:var(--ink); color:#fff; font-size:8.5pt;
+        padding:1mm 3mm; border-radius:2mm; letter-spacing:1.5px; text-transform:uppercase; }
+  .soft{ color:var(--gray); }
+  table.kv{ border-collapse:collapse; width:100%; font-size:9.8pt; margin:2mm 0; }
+  table.kv td{ border-bottom:1px solid var(--line); padding:1.8mm 2mm; vertical-align:top; }
+  table.kv td:first-child{ font-weight:700; width:30%; color:var(--ink); }
+  .footer{ text-align:center; font-size:8.4pt; color:var(--gray); margin-top:8mm;
+           border-top:1px solid var(--line); padding-top:3mm; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <span class="tag">Guía de captura y calibración</span>
+  <h1>Captura y calibración de dos cámaras<br>para reconstrucción 3D de la mano</h1>
+  <p class="lead">Cómo grabar y calibrar dos cámaras para que el material permita una
+  reconstrucción 3D métrica de la mano. Guía visual centrada en la captura.</p>
+</div>
+
+<div class="section">
+  <h2>El proceso de un vistazo</h2>
+  <p>Se imprime un tablero de calibración, se graba un video corto moviéndolo despacio
+  ante las dos cámaras a la vez, y con ese material se calcula la geometría exacta de las
+  cámaras. Después, los puntos de la mano detectados en cada vista se cruzan para obtener
+  posiciones 3D reales, en milímetros.</p>
+  <figure>
+    <img src="diagrams/d1_pipeline.png" alt="pipeline">
+    <figcaption>Las cinco etapas del proceso completo.</figcaption>
+  </figure>
+  <div class="callout c-ok">
+    <span class="t">Alcance de esta guía</span>
+    Esta guía cubre la captura: el tablero, la grabación de calibración y la grabación de
+    las secuencias (etapas 1 y 2). El cálculo de la calibración y la reconstrucción 3D
+    (etapas 3–5) son posteriores y se realizan a partir del material grabado.
+  </div>
+</div>
+
+<div class="section">
+  <h2>Qué se mide al calibrar</h2>
+  <p>Calibrar consiste en encontrar tres cosas. Las dos primeras son geométricas; la
+  tercera es de tiempo. Conocerlas ayuda a entender por qué la captura debe hacerse con
+  cuidado.</p>
+  <div class="grid2">
+    <div>
+      <h3>1 · Intrínsecos</h3>
+      <p class="soft">Las propiedades internas de <em>cada</em> lente: distancia focal,
+      centro óptico y la distorsión, que siempre es más fuerte en las esquinas de la imagen.</p>
+    </div>
+    <div>
+      <h3>2 · Extrínsecos</h3>
+      <p class="soft">La posición y orientación de una cámara <em>respecto a la otra</em>.
+      Solo puede medirse cuando ambas cámaras ven el tablero al mismo tiempo.</p>
+    </div>
+  </div>
+  <figure>
+    <img src="diagrams/d3_intr_extr.png" alt="intrinsecos vs extrinsecos">
+    <figcaption>Intrínsecos: la “personalidad” de cada lente. Extrínsecos: dónde está
+    una cámara con relación a la otra.</figcaption>
+  </figure>
+  <div class="callout c-ok">
+    <span class="t">3 · Sincronización temporal</span>
+    Saber qué fotograma de una cámara corresponde al de la otra. Una palmada fuerte al
+    inicio deja una marca de audio que permite alinear las dos grabaciones; con equipo
+    profesional puede usarse timecode o genlock por hardware.
+  </div>
+</div>
+
+<div class="section">
+  <h2>El paso decisivo: el ángulo de las cámaras</h2>
+  <p>Este es el factor más importante y el que casi nadie menciona. Para reconstruir en 3D,
+  las dos cámaras necesitan <strong>un campo de visión compartido</strong> sobre la zona
+  donde ocurre la acción. Conviene colocarlas a unos <strong>70–90° entre sí</strong>, no
+  enfrentadas.</p>
+  <figure>
+    <img src="diagrams/d2_angulo.png" alt="angulo de camaras">
+    <figcaption>Con ~80° ambas ven el frente del tablero y pueden calibrarse. Casi
+    opuestas (~180°), una ve el dorso sin marcadores y la calibración entre cámaras es imposible.</figcaption>
+  </figure>
+  <div class="callout c-warn">
+    <span class="t">Evita las cámaras enfrentadas</span>
+    A ~180° una cámara ve el dorso del tablero (sin marcadores) y no es posible calcular
+    los extrínsecos. Si la escena exige cobertura opuesta, añade una tercera cámara
+    intermedia que enlace ambos lados.
+  </div>
+</div>
+
+<div class="section">
+  <h2>Paso 1 · El tablero</h2>
+  <p>Conviene un <strong>tablero ChArUco</strong> (un ajedrezado con marcadores), porque se
+  detecta con fiabilidad aunque aparezca parcialmente recortado. Se imprime a tamaño real
+  y se pega <strong>plano y rígido</strong> sobre cartón, sin ondas ni reflejos.</p>
+  <div class="callout c-key">
+    <span class="t">La regla de oro de la escala</span>
+    Tras imprimir, mide con una regla el lado real de un cuadro y anótalo. Toda la escala
+    métrica (que el resultado salga en milímetros correctos) depende de esa medida.
+  </div>
+</div>
+
+<div class="section">
+  <h2>Paso 2 · La “técnica del oleaje”</h2>
+  <p>Con las dos cámaras grabando a la vez, se mueve el tablero por toda la escena. Ese
+  único clip sirve para los intrínsecos y los extrínsecos. La clave no es agitarlo: es un
+  recorrido lento y deliberado que cubra toda la imagen.</p>
+  <figure>
+    <img src="diagrams/d4_oleaje.png" alt="tecnica del oleaje">
+    <figcaption>Recorre el centro y las cuatro esquinas, inclinando el tablero y
+    variando la distancia, siempre con movimientos lentos y pausas.</figcaption>
+  </figure>
+  <div class="grid2">
+    <div>
+      <h3>Haz</h3>
+      <ul class="check">
+        <li>Muévelo despacio, con pausas en cada posición.</li>
+        <li>Cubre sobre todo las esquinas de la imagen.</li>
+        <li>Inclínalo en muchos ángulos, y de cerca y de lejos.</li>
+        <li>Mantenlo visible para las dos cámaras.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Evita</h3>
+      <ul>
+        <li><span class="cross">✗</span> Movimientos rápidos (el desenfoque arruina todo).</li>
+        <li><span class="cross">✗</span> El tablero pequeño o lejano.</li>
+        <li><span class="cross">✗</span> Brillos y reflejos sobre el papel.</li>
+        <li><span class="cross">✗</span> Mover o reenfocar las cámaras después.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Paso 3 · Grabar las secuencias</h2>
+  <p>Una vez calibrado, se graban las acciones con <strong>el mismo rig fijo</strong>. Las
+  dos cámaras deben grabar a la vez y mantener exactamente la misma configuración usada en
+  la calibración.</p>
+  <div class="grid2">
+    <div>
+      <h3>Ajustes de cámara</h3>
+      <ul class="check">
+        <li>Foco, exposición y balance de blancos <strong>bloqueados</strong> (modo manual).</li>
+        <li>Misma tasa de fotogramas en ambas (p. ej. 30 o 60 fps).</li>
+        <li>Resolución alta y constante (≥ 1080p).</li>
+        <li>Buena iluminación, difusa y sin sombras duras.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>En cada toma</h3>
+      <ul class="check">
+        <li>Una palmada al inicio para sincronizar por audio.</li>
+        <li>La mano dentro del campo común de las dos cámaras.</li>
+        <li>No mover ni tocar las cámaras entre tomas.</li>
+        <li>Fondo y luz estables durante toda la sesión.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Qué ocurre después de la captura</h2>
+  <p>Esta parte queda <em>fuera del alcance de la captura</em>, pero ayuda a entender para
+  qué sirve el material: con la calibración lista, cada punto de la mano visto por las dos
+  cámaras se reconstruye en 3D métrico allí donde se cruzan los rayos. Cuanto mejor sea la
+  captura, mejor será esa reconstrucción.</p>
+  <figure class="fig-narrow">
+    <img src="diagrams/d5_triangulacion.png" alt="triangulacion">
+    <figcaption>Un punto visto por las dos cámaras se reconstruye en 3D por la
+    intersección de los rayos. Cualquier punto visible en al menos dos vistas se recupera.</figcaption>
+  </figure>
+</div>
+
+<div class="section">
+  <h2>Herramientas recomendadas para la captura</h2>
+  <table class="kv">
+    <tr><td>Grabación</td><td>Cámaras con control manual (foco, exposición y balance de
+      blancos bloqueados). Para webcams o varias cámaras a la vez, OBS Studio; en móvil,
+      apps con modo manual (p. ej. Open Camera o Filmic Pro).</td></tr>
+    <tr><td>Sincronización</td><td>Palmada o claqueta al inicio (marca de audio). Si el
+      equipo lo permite, timecode o genlock por hardware para sincronía exacta.</td></tr>
+    <tr><td>Tablero ChArUco</td><td>Generadores de patrón gratuitos (calib.io) o las
+      utilidades de OpenCV. Imprimir a tamaño real, montar plano y medir un cuadro.</td></tr>
+    <tr><td>Calibración (posterior)</td><td>El material del tablero se procesa con
+      herramientas como Pose2Sim o Anipose, hechas para 3D multicámara. Saber esto ayuda
+      a entregar videos con los requisitos correctos.</td></tr>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Lista de verificación</h2>
+  <ul class="check">
+    <li>Cámaras a ~70–90°, con la zona de acción en el campo común.</li>
+    <li>Tablero impreso a tamaño real, plano y rígido.</li>
+    <li>Lado del cuadro medido con regla y anotado.</li>
+    <li>Video de calibración lento, cubriendo esquinas, inclinado, de cerca y de lejos.</li>
+    <li>Tablero visible para ambas cámaras buena parte del clip.</li>
+    <li>Ajustes de cámara en manual y bloqueados; misma tasa de fotogramas.</li>
+    <li>Palmada de sincronía al inicio de cada toma.</li>
+    <li>No mover ni reenfocar las cámaras tras calibrar; mismo rig para todo.</li>
+  </ul>
+</div>
+
+<div class="footer">
+  Guía de captura y calibración · Reconstrucción 3D de la mano a partir de dos vistas
+</div>
+
+</body>
+</html>

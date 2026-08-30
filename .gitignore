@@ -1,0 +1,21 @@
+# ---- Raw data & rendered results (large, kept out of git) ----
+Videos Cinves/
+out/
+*.mp4
+*.avi
+*.mov
+*.wav
+
+# ---- Model weights (fetch with ./get_model.sh) ----
+*.task
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# ---- Logs & scratch ----
+*.log
+.DS_Store
