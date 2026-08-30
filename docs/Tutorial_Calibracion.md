@@ -19,7 +19,7 @@ geometría de las cámaras. Después, los keypoints 2D de la mano que ya genera
 
 | Elemento | Detalle |
 |---|---|
-| Tablero ChArUco | Generado con `generar_charuco.py` → `charuco_board.png` (ya creado) |
+| Tablero ChArUco | Generado con `generar_charuco.py` → `docs/charuco_board.png` (ya creado) |
 | Impresora + cartón rígido | Imprimir el tablero y pegarlo plano (sin arrugas) |
 | Regla | Para medir el lado real de un cuadro tras imprimir |
 | Las 2 cámaras fijas | En trípode/soporte, **que no se muevan** durante todo el proceso |
@@ -71,10 +71,10 @@ intermedia.
 
 ```bash
 conda activate handpose
-python generar_charuco.py          # crea charuco_board.png (A4, 5x7)
+python generar_charuco.py          # crea docs/charuco_board.png (A4, 5x7)
 ```
 
-1. Imprime `charuco_board.png` **a tamaño real (100%, sin "ajustar a página")**.
+1. Imprime `docs/charuco_board.png` **a tamaño real (100%, sin "ajustar a página")**.
 2. Pégalo **plano y rígido** sobre cartón pluma o cartón grueso. Sin ondas ni brillos.
 3. **Mide con regla** el lado real de un cuadro negro (en metros). Si no son 35 mm,
    edita `SQUARE_LEN` en `generar_charuco.py` y vuelve a usar ese valor en el software de

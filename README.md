@@ -1,9 +1,18 @@
-# HandPose — two-view 3D hand reconstruction without camera calibration
+# HandPose — two-view 3D hand reconstruction
 
-Markerless 3D hand tracking of grasp trials filmed with **two uncalibrated phone
-cameras**. Single-view MediaPipe hand tracking hallucinates the fingers that the
-object occludes; this pipeline recovers them by fusing a second viewpoint —
-**without any camera calibration**, using the palm as its own reference frame.
+Markerless 3D hand tracking of grasp trials filmed with **two phone cameras**.
+Single-view MediaPipe hand tracking hallucinates the fingers that the object
+occludes; a second viewpoint recovers them.
+
+The repo covers two routes to that second viewpoint:
+
+- **Calibration-free fusion** *(implemented, and what produced the results
+  below)* — uses the palm as its own reference frame, so it needs no camera
+  calibration at all. Accurate to ~0.75 cm.
+- **ChArUco calibration → metric triangulation** *(board generator + full
+  written guide; triangulation delegated to Pose2Sim/Anipose)* — the higher-
+  accuracy route, for when relative-scale 3D is not good enough. See
+  [Calibration](#calibration-route-to-metric-3d).
 
 ![primary-only vs fused](docs/compare_fill.png)
 
@@ -45,9 +54,7 @@ The two cameras are never calibrated. Instead, per frame:
 
 Measured on the Cilindrico pair, the palm-anchor fit residual is **0.75 cm median**
 (~8 % of palm span) across 323 synced frame pairs — that is the practical accuracy
-limit of this uncalibrated approach (`align_probe.py` reports it for any pair). For **metric 3D by proper triangulation**, see
-[`docs/Tutorial_Calibracion.md`](docs/Tutorial_Calibracion.md) (Spanish) — a
-step-by-step ChArUco calibration guide targeting Pose2Sim/Anipose.
+limit of this uncalibrated approach (`align_probe.py` reports it for any pair).
 
 ## Results
 
@@ -66,6 +73,35 @@ Sync confidence is the correlation peak over its 99th-percentile baseline;
 anything above ~5 is a clean match. "Joints recovered" is the share of all
 landmark rows that came from the second view rather than being guessed by the
 primary.
+
+## Calibration route to metric 3D
+
+The fusion above deliberately avoids calibration — it buys robustness (nothing to
+set up, cameras can be any two phones) at the cost of scale that is only as good
+as MediaPipe's own world-landmark estimate. Calibrating the pair properly replaces
+the palm-anchor fit with real triangulation: every point seen by both cameras is
+reconstructed in true millimetres.
+
+That route is documented end to end in
+[`docs/Tutorial_Calibracion.md`](docs/Tutorial_Calibracion.md) (Spanish, with
+diagrams) — what intrinsics, extrinsics, and temporal sync each mean; how to shoot
+a usable ChArUco video and the mistakes that ruin one; and three ways to compute
+the calibration (Pose2Sim, Anipose, or OpenCV by hand).
+
+```bash
+python generar_charuco.py    # -> docs/charuco_board.png, printable A4 5x7 board
+```
+
+**Print it at 100 % scale, then measure a printed square with a ruler and correct
+`SQUARE_LEN` in `generar_charuco.py`** — that measurement is what makes the output
+metric, and printer scaling is the usual source of a silently wrong scale factor.
+
+Status: the board generator and the guide are here; the triangulation itself is
+delegated to Pose2Sim or Anipose rather than reimplemented. The one piece still
+missing to connect them is a converter that writes the `x_px,y_px` columns
+`hand_pose.py` already exports into the per-frame OpenPose-style JSON Pose2Sim
+expects. `sync_audio.py` already covers the temporal-sync step for the calibration
+footage too.
 
 ## Setup
 
@@ -156,5 +192,5 @@ to `out/Cilindrico/`; change `GRASP` at the top to point them elsewhere.
   tutorial: what intrinsics/extrinsics are, how to shoot the ChArUco video, and
   how to get real metric 3D via Pose2Sim or Anipose (Spanish, with diagrams).
 - `docs/tutorial.html`, `docs/Tutorial_Calibracion.pdf` — rendered versions.
-- `docs/charuco_board.png` — printable A4 board. **Measure a printed square with
-  a ruler and correct `SQUARE_LEN` in `generar_charuco.py` before calibrating.**
+- `docs/charuco_board.png` — printable A4 board (see
+  [Calibration](#calibration-route-to-metric-3d)).
