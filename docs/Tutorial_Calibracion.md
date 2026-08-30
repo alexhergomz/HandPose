@@ -125,37 +125,57 @@ audio basta.)
 ### Opción A (recomendada): **Pose2Sim** — el más fácil y completo
 
 [Pose2Sim](https://github.com/perfanalytics/pose2sim) está hecho para 3D markerless
-multicámara. Hace calibración (ChArUco), sincronización, triangulación y filtrado.
+multicámara: sincronización, triangulación y filtrado.
 
 ```bash
 pip install pose2sim
 ```
 
+> ⚠️ **Importante — Pose2Sim NO detecta ChArUco.** Su propia calibración
+> (`calibration_type = 'calculate'`) busca un **tablero de ajedrez**, no un ChArUco:
+> en su código no hay ninguna llamada a `cv2.aruco`. Los únicos valores válidos de
+> `calibration_type` son `'calculate'` y `'convert'`.
+> Para usar tu tablero ChArUco tienes dos caminos:
+> 1. Calcular la calibración con una herramienta que **sí** hace ChArUco
+>    ([Caliscope](https://github.com/mprib/caliscope), Anipose, u OpenCV con
+>    `cv2.aruco.calibrateCameraCharuco`) y **importarla** en Pose2Sim con
+>    `calibration_type = 'convert'` y `convert_from = 'caliscope'`.
+> 2. Usar Anipose de principio a fin (Opción B), que sí calibra con ChArUco.
+
 Estructura de carpetas que espera (resumen):
 
 ```
 Proyecto/
-├── calibration/        # tus videos del tablero (camA, camB)
-├── videos/             # los videos del agarre (camA, camB)
-└── Config.toml         # configuras tipo de tablero = charuco, tamaños, etc.
+├── calibration/        # Calib.toml ya calculado (importado con 'convert')
+├── pose/
+│   ├── cam1_json/      # keypoints 2D, un JSON por fotograma (estilo OpenPose)
+│   └── cam2_json/
+└── Config.toml
 ```
-
-En `Config.toml` indicas:
-- `calibration_type = "charuco"` (o "board"),
-- el número de casillas `5x7` y `square_size` (¡tu medida real en mm!),
 
 y luego:
 
 ```python
 from Pose2Sim import Pose2Sim
-Pose2Sim.calibration()      # genera Calib.toml con intrínsecos + extrínsecos
 Pose2Sim.triangulation()    # produce los 3D a partir de los keypoints 2D
 ```
 
-> **Integración con lo que ya tienes:** `hand_pose.py` ya exporta los 21 keypoints 2D por
-> vista (columnas `x_px,y_px`). Esos son justo la entrada que Pose2Sim necesita para
-> triangular — solo hay que escribirlos en el formato que pide (un JSON por fotograma estilo
-> OpenPose). Te lo puedo automatizar con un pequeño script de conversión.
+> **Integración con lo que ya tienes — ya está automatizada.**
+> `export_pose2sim.py` convierte los CSV de `hand_pose.py` al JSON estilo OpenPose
+> que Pose2Sim triangula, y genera el `Config.toml` y la estructura de carpetas:
+>
+> ```bash
+> python export_pose2sim.py --grasp Cilindrico   # -> pose2sim/Cilindrico/
+> ```
+>
+> Dos detalles que resuelve por ti:
+> - **Orden de keypoints:** el esqueleto `HAND_21` de Pose2Sim (`pose_model = 'HAND'`)
+>   coincide **1:1** con los 21 landmarks de MediaPipe, así que los ids pasan tal cual.
+> - **Alineación temporal:** Pose2Sim empareja las cámaras **por índice** (el archivo
+>   N de cam1 se supone simultáneo al N de cam2). Como las dos cámaras van libres y a
+>   distinto fps, el script **remuestrea** la vista secundaria sobre los fotogramas de
+>   la primaria usando el desfase de `sync_audio.py`. Por eso no hace falta el paso
+>   `[synchronization]` de Pose2Sim.
 
 ### Opción B: **Anipose**
 
@@ -219,4 +239,5 @@ necesaria si quieres **precisión métrica sub-centimétrica**.
 
 *Anexo: archivos del proyecto relevantes — `generar_charuco.py` (tablero),
 `sync_audio.py` (sincronía por audio), `hand_pose.py` (keypoints 2D por vista),
+`export_pose2sim.py` (exporta esos keypoints al formato de Pose2Sim),
 `fuse_views.py` (fusión sin calibración).*

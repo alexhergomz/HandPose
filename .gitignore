@@ -1,6 +1,7 @@
 # ---- Raw data & rendered results (large, kept out of git) ----
 Videos Cinves/
 out/
+pose2sim/
 *.mp4
 *.avi
 *.mov

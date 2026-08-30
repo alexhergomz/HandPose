@@ -96,12 +96,36 @@ python generar_charuco.py    # -> docs/charuco_board.png, printable A4 5x7 board
 `SQUARE_LEN` in `generar_charuco.py`** — that measurement is what makes the output
 metric, and printer scaling is the usual source of a silently wrong scale factor.
 
-Status: the board generator and the guide are here; the triangulation itself is
-delegated to Pose2Sim or Anipose rather than reimplemented. The one piece still
-missing to connect them is a converter that writes the `x_px,y_px` columns
-`hand_pose.py` already exports into the per-frame OpenPose-style JSON Pose2Sim
-expects. `sync_audio.py` already covers the temporal-sync step for the calibration
-footage too.
+### Feeding the 2D keypoints to Pose2Sim
+
+`export_pose2sim.py` bridges the tracking you already have to the calibrated
+route — it converts the per-view CSVs into the OpenPose-style JSON Pose2Sim
+triangulates, and writes the folder layout and a `Config.toml` stub:
+
+```bash
+python export_pose2sim.py --grasp Cilindrico     # -> pose2sim/Cilindrico/
+```
+
+Two things it handles that a naive dump would get wrong:
+
+- **Keypoint order** — Pose2Sim's `HAND_21` skeleton (`pose_model = 'HAND'`) is
+  landmark-for-landmark identical to MediaPipe's 0–20, so ids pass through 1:1.
+- **Temporal alignment** — Pose2Sim pairs the cameras **by file index**, assuming
+  the Nth file of each camera is simultaneous. Two free-running phones at
+  different frame rates (30 vs 58.85 fps here) are not. The script resamples the
+  secondary view onto the primary's frame timeline using the `sync_audio.py`
+  offset, so index-paired files really are simultaneous — which also makes
+  Pose2Sim's own `[synchronization]` step unnecessary.
+
+It reports how many frames are actually triangulable (a hand found in *both*
+views): 323 for Cilindrico, matching `align_probe.py`'s independent count.
+
+Status: what ships is the board generator, this exporter, and the guide. The
+triangulation itself is delegated to Pose2Sim or Anipose rather than
+reimplemented, and you still need to shoot and compute a calibration — note
+that **Pose2Sim's own calibration detects a checkerboard, not ChArUco**, so a
+ChArUco calibration must be computed with Caliscope, Anipose, or OpenCV and
+imported via `calibration_type = 'convert'`. The tutorial covers this.
 
 ## Setup
 
@@ -176,6 +200,7 @@ python overlay_fill.py --video "Videos Cinves/Pinch_Derecha.mp4" \
 | `fuse_views.py` | Kabsch palm alignment → fused 3D CSV + 3D skeleton video |
 | `grasp_metrics.py` | Aperture, per-finger flexion, fingertip spread → CSV + plot |
 | `overlay_fill.py` | Projects the fused 3D back onto the primary video |
+| `export_pose2sim.py` | Converts the per-view CSVs to Pose2Sim/OpenPose JSON for triangulation |
 | `batch_all.py` | Runs sync → track → fuse for all six grasp pairs |
 | `batch_metrics_overlay.py` | Runs metrics + overlay for everything already in `out/` |
 | `align_probe.py` | Diagnostic: how well do the two views actually align? |
